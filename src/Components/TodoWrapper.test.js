@@ -1,12 +1,18 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TodoWrapper } from "./TodoWrapper";
 
-// React reports a missing list key through console.error; treat that as a failure
-// so the edit-form key regression cannot come back silently.
+// React reports a missing list key through console.error; turn that one warning
+// into a failure so the edit-form key regression cannot come back silently.
+// Other console.error output (for example dependency deprecation notices) still prints.
+const originalConsoleError = console.error;
 let consoleError;
 beforeEach(() => {
     consoleError = jest.spyOn(console, "error").mockImplementation((...args) => {
-        throw new Error(args.join(" "));
+        const message = args.join(" ");
+        if (message.includes('unique "key" prop')) {
+            throw new Error(message);
+        }
+        originalConsoleError(...args);
     });
 });
 afterEach(() => consoleError.mockRestore());
