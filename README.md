@@ -39,6 +39,12 @@ npm run build    # static output in build/
 
 Hosted on Vercel as a static Create React App build (`npm run build`, output `build/`). No environment variables are needed.
 
+## Known issues
+
+- `npm audit` still reports advisories; all of them sit under `react-scripts` 5, which is no longer maintained. Clearing them means moving the build to Vite, which is a larger change than a dependency bump.
+- A blanket `npm update` breaks the build: the newer `eslint-plugin-jest` it pulls in is not understood by `eslint-config-react-app` ("Environment key jest/globals is unknown"). Update packages individually and rebuild.
+- React 18.3 emits an `act` deprecation warning under `@testing-library/react` 13. Moving React past 18.2 needs `@testing-library/react` 14 or later at the same time.
+
 ## Project structure
 
 ```
