@@ -1,63 +1,63 @@
 import React, { useState } from "react";
 import { Todo } from "./Todo";
 import { TodoForm } from "./TodoForm";
-import { v4 as uuidv4 } from "uuid";
 import { EditTodoForm } from "./EditTodoForm";
+import { useTodos } from "../todos/use-todos";
+
+const describeProgress = (todos) => {
+    if (todos.length === 0) {
+        return "No tasks yet. Add the first one above.";
+    }
+    const done = todos.filter((todo) => todo.completed).length;
+    return `${done} of ${todos.length} done`;
+};
 
 export const TodoWrapper = () => {
-    const [todos, setTodos] = useState([]);
+    const { todos, isSaved, addTodo, renameTodo, toggleTodo, deleteTodo } = useTodos();
+    // Which row is being edited is view state, so it is not saved with the tasks.
+    const [editingId, setEditingId] = useState(null);
+    const [lastEditedId, setLastEditedId] = useState(null);
 
-    const addTodo = (todo) => {
-        setTodos([
-            ...todos,
-            { id: uuidv4(), task: todo, completed: false, isEditing: false },
-        ]);
-    }
+    const closeEdit = () => {
+        setLastEditedId(editingId);
+        setEditingId(null);
+    };
 
-    const deleteTodo = (id) => setTodos(todos.filter((todo) => todo.id !== id));
-
-    const toggleComplete = (id) => {
-        setTodos(
-            todos.map((todo) =>
-                todo.id === id ? { ...todo, completed: !todo.completed } : todo
-            )
-        );
-    }
-
-    const editTodo = (id) => {
-        setTodos(
-            todos.map((todo) =>
-                todo.id === id ? { ...todo, isEditing: !todo.isEditing } : todo
-            )
-        );
-    }
-
-    const editTask = (task, id) => {
-        setTodos(
-            todos.map((todo) =>
-                todo.id === id ? { ...todo, task, isEditing: !todo.isEditing } : todo
-            )
-        );
+    const saveTask = (id, task) => {
+        renameTodo(id, task);
+        closeEdit();
     };
 
     return (
-        <div className="TodoWrapper">
-            <h1>Get Things Done !</h1>
+        <main className="TodoWrapper">
+            <h1>Get things done</h1>
             <TodoForm addTodo={addTodo} />
-            {/* display todos */}
-            {todos.map((todo) =>
-                todo.isEditing ? (
-                    <EditTodoForm key={todo.id} editTodo={editTask} task={todo} />
-                ) : (
-                    <Todo
-                        key={todo.id}
-                        task={todo}
-                        deleteTodo={deleteTodo}
-                        editTodo={editTodo}
-                        toggleComplete={toggleComplete}
-                    />
-                )
+            <p className="todo-status" aria-live="polite">
+                {describeProgress(todos)}
+            </p>
+            {!isSaved && (
+                <p className="todo-notice" role="status">
+                    This browser is blocking storage, so these tasks will be gone when you
+                    close the tab.
+                </p>
             )}
-        </div>
+            <ul className="todo-list">
+                {todos.map((todo) => (
+                    <li key={todo.id}>
+                        {todo.id === editingId ? (
+                            <EditTodoForm task={todo} saveTask={saveTask} cancelEdit={closeEdit} />
+                        ) : (
+                            <Todo
+                                task={todo}
+                                deleteTodo={deleteTodo}
+                                startEdit={setEditingId}
+                                toggleComplete={toggleTodo}
+                                shouldFocusEdit={todo.id === lastEditedId}
+                            />
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </main>
     );
 };
